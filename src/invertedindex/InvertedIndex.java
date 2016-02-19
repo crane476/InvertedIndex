@@ -37,38 +37,48 @@ public class InvertedIndex {
             filePaths.add(fList[i].toString());
             fileID.add(fList[i].getName());
         }
-        getTokens(filePaths);
+        HashMap<String, HashMap<Integer, Integer>> invertedIndex = getTokens(filePaths); //temporary
+        output(invertedIndex);
     }
 
-    public static void getTokens(ArrayList<String> files) {
-        String newToken;
-        HashMap<String, HashMap<Integer, Integer>> index = new HashMap<>();
-        HashMap<Integer, Integer> termFrequency = new HashMap<>();
-        for (int i = 0; i < files.size(); i++) {
+    public static HashMap<String, HashMap<Integer, Integer>> getTokens(ArrayList<String> files) {
+        String newToken; //current word being read from file
+        HashMap<String, HashMap<Integer, Integer>> index = new HashMap<>(); //List of tokens which map to termFrequency
+        HashMap<Integer, Integer> termFrequency; //list of document ID's which map to number of occurrences
+        for (int i = 0; i < files.size(); i++) { //loop through list of files
             try {
-                Scanner fileIn = new Scanner(new File(files.get(i)));
+                Scanner fileIn = new Scanner(new File(files.get(i))); //read in word from file
                 while (fileIn.hasNext()) {
-                    newToken = fileIn.next();
-                    newToken = newToken.toLowerCase();
-                    newToken = removeStopWords(newToken);
+                    newToken = fileIn.next(); //assign word to newToken
+                    newToken = newToken.toLowerCase(); //convert to lowercase
+                    newToken = removeStopWords(newToken); //if stopword remove
                     if (!newToken.equals("")) {
-                        WordStem(newToken);
+                        newToken = newToken.replaceAll("[-+.^:,]", ""); //remove all special characters
+                        newToken = WordStem(newToken); //reduce word to root form
                         if (index.containsKey(newToken)) {
-                            termFrequency.put(i, index.get(newToken).get(i) + 1);
-                            index.put(newToken, termFrequency);
+                            if (index.get(newToken).containsKey(i)) {
+                                HashMap<Integer, Integer> newPosting = (HashMap)index.get(newToken).clone();
+                                newPosting.put(i, newPosting.get(i) + 1);
+                                index.put(newToken, newPosting);
+                            } else {
+                                HashMap<Integer, Integer> newPosting = (HashMap)index.get(newToken).clone();
+                                newPosting.put(i, 1);
+                                index.put(newToken, newPosting);
+                            }
                         } else {
+                            termFrequency = new HashMap<>();
                             termFrequency.put(i, 1);
                             index.put(newToken, termFrequency);
                         }
                     }
-                    termFrequency.clear();
                 }
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(InvertedIndex.class.getName()).log(Level.SEVERE, null, ex);
             }
 
         }
-        output(index);
+        //output(index);
+        return index;
     }
 
     public static void output(HashMap<String, HashMap<Integer, Integer>> invertedIndex) {
@@ -82,7 +92,7 @@ public class InvertedIndex {
                 int frequency = invertedIndex.get(token).get(docID);
                 System.out.println("<" + frequency + ", " + docID + ">");
             }
-
+            System.out.println(" ");
         }
     }
 
@@ -109,7 +119,7 @@ public class InvertedIndex {
         return word;
     }
 
-    public static void WordStem(String word) {
+    public static String WordStem(String word) {
         Stemmer st = new Stemmer();
         String s1 = st.step1(word);
         String s2 = st.step2(s1);
@@ -117,6 +127,7 @@ public class InvertedIndex {
         String s4 = st.step4(s3);
         String s5 = st.step5(s4);
         word = s5;
+        return word;
         //return word;
     }
 }
