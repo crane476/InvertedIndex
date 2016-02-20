@@ -98,8 +98,8 @@ public class InvertedIndex {
                 while (fileIn.hasNext()) {
                     newToken = fileIn.next(); //assign word to newToken
                     newToken = newToken.toLowerCase(); //convert to lowercase
-                    if (!stopWords.contains(newToken)) {
-                        newToken = newToken.replaceAll("[-+.^:,]", ""); //remove all special characters
+                    newToken = newToken.replaceAll("[-+.^:,&\"/=();]", ""); //remove all special characters
+                    if (!stopWords.contains(newToken) && !newToken.equals("")) {
                         newToken = WordStem(newToken); //reduce word to root form
                         if (index.containsKey(newToken)) {
                             if (index.get(newToken).containsKey(i)) { //if term has already been encountered in this document
@@ -141,19 +141,20 @@ public class InvertedIndex {
         //System.out.println(" ");
         TreeMap<String, HashMap<Integer, Integer>> sortedIndex = new TreeMap(invertedIndex); //sort invertedIndex by converting to treeMap
         Iterator tokens = sortedIndex.keySet().iterator();
-        String formatStr = "%-15s %20s %n";
+        String formatStr = "%-15s %25s %n";
         String output = String.format(formatStr, "Token", "<Frequency, DocID>\n");
         while (tokens.hasNext()) {
             String token;
             String posting = "";
             token = tokens.next().toString();
-            Iterator ID = sortedIndex.get(token).keySet().iterator();
+            TreeMap<Integer, Integer> sortedID = new TreeMap(sortedIndex.get(token));
+            Iterator ID = sortedID.keySet().iterator();
             while (ID.hasNext()) {
                 int docID = (Integer) ID.next();
                 int frequency = sortedIndex.get(token).get(docID);
                 posting += "<" + frequency + ", " + docID + "> ";
             }
-            System.out.printf("%-15s %20s %n", token, posting);
+            System.out.printf("%-15s %25s %n", token, posting);
             output += String.format(formatStr, token, posting);
         }
         try {
@@ -165,7 +166,7 @@ public class InvertedIndex {
             try (BufferedWriter bw = new BufferedWriter(fw)) {
                 bw.write(output);
             }
-            
+
         } catch (IOException e) {
         }
 
