@@ -46,7 +46,6 @@ public class InvertedIndex {
      */
     public static void main(String[] args) {
         // TODO code application logic here
-        //DON'T FORGET TO PUT COMMENT HEADERS FOR FUNCTIONS!!!!!!!!!
         String inDirectory = JOptionPane.showInputDialog(null, "Enter an Input Directory: ");
         String stopPath = JOptionPane.showInputDialog(null, "Enter File Path for stopword list: ");
         File fileNames = new File(inDirectory);
@@ -57,7 +56,7 @@ public class InvertedIndex {
             filePaths.add(fList[i].toString());
         }
 
-        HashMap<String, HashMap<Integer, Integer>> invertedIndex = getTokens(filePaths, stopwords); //temporary for debugging purposes
+        HashMap<String, HashMap<Integer, Integer>> invertedIndex = getTokens(filePaths, stopwords);
         output(invertedIndex);
     }
 
@@ -76,6 +75,45 @@ public class InvertedIndex {
             Logger.getLogger(InvertedIndex.class.getName()).log(Level.SEVERE, null, ex);
         }
         return stopWords;
+    }
+
+    /*
+    * Function Name: processSpecialCharacters()
+    * Arguments: String string
+    * Returns: String
+    * Description: This method takes a string and removes any special characters if needed.
+    */
+    
+    public static String processSpecialCharacters(String word) {
+        word = word.replaceAll("[+^&:\\[\\],\"/();]", "");
+        int length = word.length();
+        if (word.contains("'")) {
+            if (word.charAt(length - 2) == '\'') {
+                if (word.charAt(length - 1) == 's') {
+                    word = word.replace("'", "");
+                }
+            } else if (word.charAt(length - 1) == '\'') {
+                word = word.replace("'", "");
+            }
+        } else if (word.contains(".")) {
+            char[] array = word.toCharArray();
+            int count = 0;
+            for (int i = 0; i < array.length; i++) {
+                if (array[i] == '.') {
+                    count++;
+                }
+            }
+            if (count == 1 && word.charAt(length - 1) == '.') {
+                word = word.replace(".", "");
+                System.out.println(word);
+            } else {
+                System.out.println(word);
+            }
+        }
+        else if(word.equals("-")){
+            word = word.replace("-", "");
+        }
+        return word;
     }
 
     /*
@@ -98,7 +136,8 @@ public class InvertedIndex {
                 while (fileIn.hasNext()) {
                     newToken = fileIn.next(); //assign word to newToken
                     newToken = newToken.toLowerCase(); //convert to lowercase
-                    newToken = newToken.replaceAll("[-+.^:,&\"/=();]", ""); //remove all special characters
+                    //newToken = newToken.replaceAll("[-+.^:,&\"/=();]", ""); //remove all special characters
+                    newToken = processSpecialCharacters(newToken);
                     if (!stopWords.contains(newToken) && !newToken.equals("")) {
                         newToken = WordStem(newToken); //reduce word to root form
                         if (index.containsKey(newToken)) {
@@ -137,8 +176,6 @@ public class InvertedIndex {
      */
     public static void output(HashMap<String, HashMap<Integer, Integer>> invertedIndex) {
         String outFile = JOptionPane.showInputDialog(null, "Enter Path for Output File: ");
-        //System.out.printf("%-15s %20s %n", "Token", "<Frequency, DocID>");
-        //System.out.println(" ");
         TreeMap<String, HashMap<Integer, Integer>> sortedIndex = new TreeMap(invertedIndex); //sort invertedIndex by converting to treeMap
         Iterator tokens = sortedIndex.keySet().iterator();
         String formatStr = "%-15s %25s %n";
@@ -149,12 +186,18 @@ public class InvertedIndex {
             token = tokens.next().toString();
             TreeMap<Integer, Integer> sortedID = new TreeMap(sortedIndex.get(token));
             Iterator ID = sortedID.keySet().iterator();
+            int count = 0;
             while (ID.hasNext()) {
                 int docID = (Integer) ID.next();
                 int frequency = sortedIndex.get(token).get(docID);
                 posting += "<" + frequency + ", " + docID + "> ";
+                count++;
+                if(count == 5){
+                    count = 0;
+                    posting += "\n";
+                }
             }
-            System.out.printf("%-15s %25s %n", token, posting);
+            //System.out.printf("%-15s %25s %n", token, posting);
             output += String.format(formatStr, token, posting);
         }
         try {
